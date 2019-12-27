@@ -6,7 +6,7 @@ const handleCastErrorDB = err => {
 };
 
 const handleDuplicatedFieldsErrorDB = err => {
-  const value = err.message.match(/(["'])(\\?.)*?\1/)[0].slice(1, -1);
+  const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0].slice(1, -1);
   const message = `Invalid Request, Duplicate value: ${value}, not allowed.`;
   return new AppError(message, 400);
 };

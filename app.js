@@ -19,8 +19,10 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // import routes
+const auth_router = require('./routes/auth_router');
 
 // init routes
+app.use('/api/v1/auth', auth_router);
 
 // handle unregistred routes
 app.all('*', (req, res, next) => {

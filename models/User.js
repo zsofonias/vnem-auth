@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
   firstName: {
@@ -33,10 +34,31 @@ const UserSchema = new mongoose.Schema({
       message: 'Inputed Passwords must match'
     }
   },
+  role: {
+    type: String,
+    enum: ['admin', 'staff', 'viewer'],
+    default: 'viewer'
+  },
   createdAt: {
     type: Date,
     default: Date.now()
   }
 });
+
+// hash user password upon creation
+UserSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  this.confirmPassword = undefined;
+  next();
+});
+
+// method to verify user password with the hashed db password
+UserSchema.methods.verifyPassword = async function(
+  inputedPassword,
+  hashedPassword
+) {
+  return await bcrypt.compare(inputedPassword, hashedPassword);
+};
 
 module.exports = mongoose.model('User', UserSchema);
