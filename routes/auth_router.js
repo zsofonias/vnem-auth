@@ -13,6 +13,20 @@ const AuthMiddlewares = require('../middlewares/authMiddlewares');
 router.post('/register', AuthController.registerUser);
 
 /**
+ * @route GET api/v1/auth/verify-account/:token
+ * @desc Verify Account
+ * @access Public
+ */
+router.get('/verify-account/:token', AuthController.verifyAccount);
+
+/**
+ * @route POST api/v1/auth/request-verify
+ * @desc Send Verification token to email
+ * @access Public
+ */
+router.post('/request-verify', AuthController.resendVerificationToken);
+
+/**
  * @route POST api/v1/auth/login
  * @desc Login a User
  * @access Public
@@ -27,7 +41,7 @@ router.post('/login', AuthController.loginUser);
 router.post('/forget-password', AuthController.forgetPassword);
 
 /**
- * @route POST api/v1/auth/reset-password
+ * @route POST api/v1/auth/reset-password/:token
  * @desc Reset Password
  * @access Public
  */

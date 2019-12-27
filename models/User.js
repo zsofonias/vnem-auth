@@ -40,13 +40,19 @@ const UserSchema = new mongoose.Schema({
     enum: ['admin', 'staff', 'viewer'],
     default: 'viewer'
   },
+  verified: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now()
   },
   passwordChangedAt: Date,
   passwordResetToken: String,
-  passwordResetExpires: Date
+  passwordResetExpires: Date,
+  accountVerificationToken: String,
+  accountVerificationExpires: Date
 });
 
 // hash user password upon creation
@@ -84,6 +90,16 @@ UserSchema.methods.createPasswordResetToken = function() {
     .digest('hex');
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
   return resetToken;
+};
+
+UserSchema.methods.createAccountVerificationToken = function() {
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  this.accountVerificationToken = crypto
+    .createHash('sha256')
+    .update(verificationToken)
+    .digest('hex');
+  this.accountVerificationExpires = Date.now() + 10 * 60 * 1000;
+  return verificationToken;
 };
 
 module.exports = mongoose.model('User', UserSchema);

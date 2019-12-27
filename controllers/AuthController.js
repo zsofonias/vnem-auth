@@ -9,7 +9,12 @@ const User = require('../models/User');
 
 const createToken = user => {
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      verified: user.verified
+    },
     process.env.JWT_SECRET,
     {
       expiresIn: process.env.JWT_EXPIRES_IN
@@ -29,12 +34,85 @@ const sendResWithToken = (user, statusCode, res) => {
 };
 
 const registerUser = catchAsync(async (req, res, next) => {
-  await User.create(req.body);
-  return res.status(201).json({
-    success: true,
-    status: 'success',
-    message: 'User Registered'
+  const newUser = await User.create(req.body);
+  const accountVerificationToken = newUser.createAccountVerificationToken();
+  newUser.save({ validateBeforeSave: false });
+
+  // send verification link to email
+  try {
+    const accountVerificationUrl = `${req.protocol}://${req.get(
+      'host'
+    )}/api/v1/users/activate-account/${accountVerificationToken}`;
+    const emailMessage = `
+    Account created successfully!
+    Activate Your account using this link:
+    ${accountVerificationUrl}
+    `;
+    // send the email
+    const newEmail = new Email(newUser, accountVerificationUrl);
+    await newEmail.send('Verify Your Account', emailMessage);
+    return res.status(201).json({
+      success: true,
+      status: 'success',
+      message: 'User Registered, Verification Link Sent to email'
+    });
+  } catch (err) {
+    return next(new AppError('Error: Email sending failed'));
+  }
+});
+
+const verifyAccount = catchAsync(async (req, res, next) => {
+  const hashedVerificationToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+  const user = await User.findOne({
+    accountVerificationToken: hashedVerificationToken,
+    accountVerificationExpires: { $gt: Date.now() }
   });
+  if (!user) {
+    return next(
+      new AppError('Request Denied: Token invalid or has expired', 400)
+    );
+  }
+
+  user.verified = true;
+  user.accountVerificationToken = undefined;
+  user.accountVerificationExpires = undefined;
+  await user.save({ validateBeforeSave: false });
+  sendResWithToken(user, 200, res);
+});
+
+const resendVerificationToken = catchAsync(async (req, res, next) => {
+  if (!req.body.email) {
+    return next(new AppError('Request Failed: Email is required', 400));
+  }
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    return next(new AppError('Request Denied: Email Does not exist', 400));
+  }
+  const accountVerificationToken = user.createAccountVerificationToken();
+  await user.save({ validateBeforeSave: false });
+  try {
+    const accountVerificationUrl = `${req.protocol}://${req.get(
+      'host'
+    )}/api/v1/users/activate-account/${accountVerificationToken}`;
+    const emailMessage = `
+    Account created successfully!
+    Activate Your account using this link:
+    ${accountVerificationUrl}
+    `;
+    // send the email
+    const newEmail = new Email(user, accountVerificationUrl);
+    await newEmail.send('Verify Your Account', emailMessage);
+    return res.status(201).json({
+      success: true,
+      status: 'success',
+      message: 'Account Verification Link Sent to email'
+    });
+  } catch (err) {
+    return next(new AppError('Error: Email sending failed'));
+  }
 });
 
 const loginUser = catchAsync(async (req, res, next) => {
@@ -136,6 +214,8 @@ const updatePassword = catchAsync(async (req, res, next) => {
 
 module.exports = {
   registerUser,
+  verifyAccount,
+  resendVerificationToken,
   loginUser,
   forgetPassword,
   resetPassword,
