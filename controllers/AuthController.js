@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 
 const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
+const Email = require('../utils/Email');
 
 const User = require('../models/User');
 
@@ -55,12 +56,30 @@ const forgetPassword = catchAsync(async (req, res, next) => {
   }
   const passwordResetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
-  return res.status(200).json({
-    success: true,
-    status: 'success',
-    // message: '',
-    passwordResetToken
-  });
+
+  // send reset token to email
+  try {
+    const passwordResetUrl = `${req.protocol}://${req.get(
+      'host'
+    )}/api/v1/users/reset-password/${passwordResetToken}`;
+    const emailMessage = `
+      You Have to reset your Password!
+      Reset Your Password using this link:
+      ${passwordResetUrl}
+    `;
+    // send password reset url to email
+    const newEmail = new Email(user, passwordResetUrl);
+    await newEmail.send('Reset Your Password', emailMessage);
+
+    return res.status(200).json({
+      success: true,
+      status: 'success',
+      message: 'Password Reset token sent to your email',
+      passwordResetToken
+    });
+  } catch (err) {
+    return next(new AppError('Error: Email sending failed.'));
+  }
 });
 
 const resetPassword = catchAsync(async (req, res, next) => {
