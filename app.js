@@ -3,6 +3,9 @@ const express = require('express');
 const morgan = require('morgan');
 // const cors = require('cors');
 
+const AppError = require('./utils/AppError');
+const ErrorsController = require('./controllers/ErrorsController');
+
 // init app
 const app = express();
 
@@ -18,5 +21,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 // import routes
 
 // init routes
+
+// handle unregistred routes
+app.all('*', (req, res, next) => {
+  next(new AppError(`Resource Not Found on ${req.url}`, 404));
+});
+
+// setup error catcher
+app.use(ErrorsController.errorDispatcher);
 
 module.exports = app;
