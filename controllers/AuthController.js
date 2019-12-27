@@ -16,7 +16,7 @@ const createToken = user => {
 };
 
 const sendResWithToken = (user, statusCode, res) => {
-  const token = createToken(user);
+  const token = `Bearer ${createToken(user)}`;
   user.password = undefined;
   return res.status(statusCode).json({
     success: true,

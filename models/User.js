@@ -42,7 +42,8 @@ const UserSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now()
-  }
+  },
+  passwordChangedAt: Date
 });
 
 // hash user password upon creation
@@ -59,6 +60,17 @@ UserSchema.methods.verifyPassword = async function(
   hashedPassword
 ) {
   return await bcrypt.compare(inputedPassword, hashedPassword);
+};
+
+UserSchema.methods.isPasswordChanged = function(jwtTokenTimeStamp) {
+  if (this.passwordChangedAt) {
+    const changedTimeStamp = parseInt(
+      this.passwordChangedAt.getTime() / 1000,
+      10
+    );
+    return jwtTokenTimeStamp < changedTimeStamp;
+  }
+  return false;
 };
 
 module.exports = mongoose.model('User', UserSchema);

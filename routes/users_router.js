@@ -1,14 +1,24 @@
 const express = require('express');
+const passport = require('passport');
 
 const router = express.Router();
 
-const AuthController = require('../controllers/AuthController');
+const UsersController = require('../controllers/UsersController');
+const AuthMiddlewares = require('../middlewares/authMiddlewares');
 
 /**
- * @route POST api/v1/users/register
- * @desc Register new User
- * @access Public
+ * @route GET api/v1/users/profile
+ * @desc Returns Current User data
+ * @access Private
  */
-router.post('/register', AuthController.registerUser);
+router.get('/profile', AuthMiddlewares.protect, UsersController.getUserProfile);
+// Using passport middleware
+// router.get(
+//   '/profile',
+//   passport.authenticate('jwt', {
+//     session: false
+//   }),
+//   UsersController.getUserProfile
+// );
 
 module.exports = router;

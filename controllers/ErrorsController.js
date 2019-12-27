@@ -16,6 +16,16 @@ const handleValidationErrorDB = err => {
   return new AppError(errorMessages, 400);
 };
 
+const handleJsonWebTokenError = err => {
+  const message = `JWT Error: ${err.message}, Login Required`;
+  return new AppError(message, 401);
+};
+
+const handleTokenExpiredError = err => {
+  const message = `Authentication Failed: ${err.message}, Login Required`;
+  return new AppError(message, 401);
+};
+
 const sendDevError = (err, req, res) => {
   return res.status(err.statusCode).json({
     success: false,
@@ -54,6 +64,10 @@ const errorDispatcher = (err, req, res, next) => {
     if (error.code === 11000) error = handleDuplicatedFieldsErrorDB(error);
     if (error.name === 'ValidationError')
       error = handleValidationErrorDB(error);
+    if (error.name === 'JsonWebTokenError')
+      error = handleJsonWebTokenError(error);
+    if (error.name === 'TokenExpiredError')
+      error = handleTokenExpiredError(error);
 
     sendProdError(error, req, res);
   }
