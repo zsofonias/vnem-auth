@@ -6,14 +6,25 @@ const handleCastErrorDB = err => {
 };
 
 const handleDuplicatedFieldsErrorDB = err => {
+  console.log(err);
+  console.log(err.errmsg);
   const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0].slice(1, -1);
-  const message = `Invalid Request, Duplicate value: ${value}, not allowed.`;
+  // const message = `Invalid Request, Duplicate value: '${value}' not allowed.`;
+  const message = {
+    value,
+    message: `'${value}' is already taken.`
+  };
   return new AppError(message, 400);
 };
 
 const handleValidationErrorDB = err => {
-  const errorMessages = Object.values(err.errors).map(e => e.message);
-  return new AppError(errorMessages, 400);
+  const errKeys = Object.keys(err.errors);
+  const errMessages = [];
+  errKeys.forEach(key => {
+    errMessages.push({ name: key, message: err.errors[key].message });
+  });
+  // const errorMessages = Object.values(err.errors).map(e => e.message);
+  return new AppError(errMessages, 400);
 };
 
 const handleJsonWebTokenError = err => {
@@ -38,7 +49,6 @@ const sendDevError = (err, req, res) => {
 
 const sendProdError = (err, req, res) => {
   if (err.isOperational) {
-    console.log(err.message);
     return res.status(err.statusCode).json({
       success: false,
       status: err.status,

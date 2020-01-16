@@ -1,8 +1,8 @@
 const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
-const passport = require('passport');
-// const cors = require('cors');
+// const passport = require('passport');
+const cors = require('cors');
 
 const AppError = require('./utils/AppError');
 const ErrorsController = require('./controllers/ErrorsController');
@@ -11,6 +11,8 @@ const ErrorsController = require('./controllers/ErrorsController');
 const app = express();
 
 app.use(morgan('dev'));
+
+app.use(cors());
 
 // make app handle json data
 app.use(express.json({ limit: '10kb' }));

@@ -1,23 +1,32 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const validator = require('validator');
 const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
   firstName: {
     type: String,
     trim: true,
-    required: [true, 'User First name is required']
+    required: [true, 'User First name is required'],
+    minlength: [2, 'User First Name must be atleast 2 Characters long']
   },
   lastName: {
     type: String,
     trim: true,
-    required: [true, 'User Last name is required']
+    required: [true, 'User Last name is required'],
+    minlength: [2, 'User Last Name must be atleast 2 Characters long']
   },
   email: {
     type: String,
     trim: true,
     required: [true, 'User Email is required'],
-    unique: true
+    unique: true,
+    lowercase: true,
+    validate: [validator.isEmail, 'Enter Valid Email Address']
+    // validate: {
+    //   validator: validator.isEmail,
+    //   message: 'Enter Valid Email Address'
+    // },
   },
   password: {
     type: String,
